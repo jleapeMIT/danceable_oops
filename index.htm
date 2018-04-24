@@ -1,0 +1,21 @@
+<html>
+  <body>
+    <form ref='uploadForm' 
+      id='uploadForm' 
+      action='http://localhost:8000/upload' 
+      method='post' 
+      encType="multipart/form-data">
+      <div>
+        <label for="mp3File">MP3 File: </label>
+        <input type="file" name="mp3File" />
+      </div>
+      <div>
+        <label for="soundCloudURL">SoundCloud Link: </label>
+        <input type="text" name="soundCloudURL" />
+      </div>
+      <div>
+        <input type='submit' value='Can I dance to this?' />
+      </div>
+    </form>     
+  </body>
+</html>
