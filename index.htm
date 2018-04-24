@@ -2,7 +2,7 @@
   <body>
     <form ref='uploadForm' 
       id='uploadForm' 
-      action='http://localhost:8000/upload' 
+      action='http://localhost:8000/input' 
       method='post' 
       encType="multipart/form-data">
       <div>
@@ -12,6 +12,10 @@
       <div>
         <label for="soundCloudURL">SoundCloud Link: </label>
         <input type="text" name="soundCloudURL" />
+      </div>
+      <div>
+        <label for="youTubeURL">YouTube Link: </label>
+        <input type="text" name="youTubeURL" />
       </div>
       <div>
         <input type='submit' value='Can I dance to this?' />
