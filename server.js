@@ -1,7 +1,11 @@
+//const bootstrap = require('bootstrap');
+//require('bootstrap/dist/css/bootstrap.css');
+
 const express = require('express');
 const fileUpload = require('express-fileupload');
 const bodyParser = require('body-parser');
 const app = express();
+const chart = require('chart.js');
 
 // default options
 app.use(fileUpload());
@@ -34,9 +38,22 @@ app.post('/input', async function(req, res) {
     res.send('BPM is ' + newBPM);
 });
 
-app.listen(8000)
+app.listen(8000, function () {
+    console.log('server running on port 8000');
+})
 
 // modularize this
+
+// spectrogram
+var currentSpectrogram = new Image();
+
+currentSpectrogram.onload = function(){
+  var height = img.height;
+  var width = img.width;
+
+  // code here to use the dimensions
+}
+currentSpectrogram.src = './public/Brazilian Zouk_1.png';
 
 // getBPM.js
 const bpmSink = require('bpm.js')
