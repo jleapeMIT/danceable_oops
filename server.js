@@ -4,9 +4,19 @@
 const express = require('express');
 const fileUpload = require('express-fileupload');
 const bodyParser = require('body-parser');
-
 const path = require('path');
+const util = require('util');
+const fs = require('fs-extra');
 const chart = require('chart.js');
+const PythonShell = require('python-shell');
+const spawn = require('child_process').spawn
+const downloader = require('spotify-mp3-playlist-downloader');
+const SoundRain = require('soundrain');
+const getYouTube = require('youtube-mp3');
+const BPM = require('bpm');
+const bpmSink = require('bpm.js');
+const mm = require('music-metadata');
+
 
 const app = express();
 
@@ -45,34 +55,8 @@ app.post('/input', function(req, res) {
     if(req.files.mp3File){
         let mp3File = req.files.mp3File;
         var mp3path = __dirname + '/CNN/Input/Raw/new.mp3'
-        const moveMP3 = async () => {
-            await mp3File.mv(mp3path, function(err) {
-                if (err){
-                    return res.status(500).send(err);
-                }
-            });
-            await mm.parseFile(mp3path, {native: true})
-                .then(function (metadata) {
-                    //console.log(util.inspect(metadata, { showHidden: false, depth: null }));
-                    console.log('made it here!');
-                    console.log(metadata.common.title);
-                    console.log(metadata.common.artist);
-                    console.log(metadata.common.album);
-                    console.log(metadata.common.year);
-                })
-                .catch(function (err) {
-                    console.error(err.message);
-            });
-        };
-        moveMP3();
-
-        //getMM(__dirname + '/CNN/Input/Raw/new.mp3');
-        // res.render('index', {
-        //     title: mp3MM.title,
-        //     artist: mp3MM.artist,
-        //     album: mp3MM.album,
-        //     year: mp3MM.year
-        // });
+        fs.writeFileSync(mp3path, mp3File);
+        var metadata = parseMP3File(mp3path);
     };
     if(req.body.soundCloudURL){
         let soundCloudURL = req.body.soundCloudURL;
@@ -96,8 +80,6 @@ app.listen(8000, function () {
 // modularize this
 
 // callCNN
-const PythonShell = require('python-shell');
-
 callCNN = function(req, res) {
   var options = {
     args: ['sliceInput', 'predict'],
@@ -112,9 +94,6 @@ callCNN = function(req, res) {
 };
 
 // getBPM
-const bpmSink = require('bpm.js')
-const spawn = require('child_process').spawn
-
 const createAudioStream = function(filename) {
     var args = "-t raw -r 44100 -e float -c 1 -".split(" ")
     args.unshift(filename)
@@ -132,7 +111,6 @@ const getBPM = function(mp3){
 };
 
 // mp3FromSpotify
-// const downloader = require('spotify-mp3-playlist-downloader');
 // const mp3FromSpotify = function(spotifyURI){
 //     downloader.downloadPlaylist(spotifyURI, "./CNN/Input/Raw", function (err){
 //         if (err){
@@ -145,8 +123,6 @@ const getBPM = function(mp3){
 
 
 // mp3FromSoundCloud
-const SoundRain = require('soundrain');
-
 const mp3FromSoundCloud = function(soundCloudURL){
     var Song = new SoundRain(soundCloudURL, './input');
     Song.on('error', function(err) {
@@ -157,8 +133,6 @@ const mp3FromSoundCloud = function(soundCloudURL){
 };
 
 // mp3FromYouTube
-const getYouTube = require('youtube-mp3');
- 
 const mp3FromYouTube = function(youTubeURL){
     getYouTube.download(youTubeURL, '/input', function(err) {
         if(err) return console.log(err);
@@ -167,10 +141,7 @@ const mp3FromYouTube = function(youTubeURL){
 };
 
 // tapBPM
-const BPM = require('bpm');
-
 const tapBPM = function(){
-
     b = new BPM();
     b.tap();
     setTimeout(function() {
@@ -181,21 +152,26 @@ const tapBPM = function(){
 };
 
 // getMeta
-const mm = require('music-metadata');
-const util = require('util')
-
-const getMM = function(mp3path){
-    mm.parseFile(mp3path, {native: true})
-    .then(function (metadata) {
-        // return util.inspect(metadata, { showHidden: false, depth: null })
-        console.log(util.inspect(metadata, { showHidden: false, depth: null }));
-    })
-    .catch(function (err) {
-        console.error(err.message);
+async function parseMP3File(path) {
+    return new Promise((resolve, reject) => {
+        mm(fs.createReadStream(path), function (err, metadata) {
+            if (err) reject(err);
+            resolve(metadata);      
+        });                 
     });
-};
+}
+
+// const getMM = function(mp3path){
+//     mm.parseFile(mp3path, {native: true})
+//     .then(function (metadata) {
+//         // return util.inspect(metadata, { showHidden: false, depth: null })
+//         console.log(util.inspect(metadata, { showHidden: false, depth: null }));
+//     })
+//     .catch(function (err) {
+//         console.error(err.message);
+//     });
+// };
 
 // chart updates!
 // Ask about managing post and get from different input sources. And how to avoid redirecting to a new URL
 // async await, .then or what to manage app.post processes.
-
