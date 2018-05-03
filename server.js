@@ -4,25 +4,75 @@
 const express = require('express');
 const fileUpload = require('express-fileupload');
 const bodyParser = require('body-parser');
-const app = express();
+
+const path = require('path');
 const chart = require('chart.js');
 
-// default options
+const app = express();
+
+// const logger = function(req, res, next){
+//     console.log('Logging...');
+//     next();
+// };
+//
+//app.use(logger);
+
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// Body Parser Middleware
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: true}));
 app.use(fileUpload());
-app.use(bodyParser.urlencoded({ extended: true }));
+
+// Set static path
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(__dirname, { index: 'index.htm' }));
 
-app.post('/input', async function(req, res) {
+app.get('/', function(req, res){
+    res.render('index', {
+        title: "We Won't",
+        artist: 'James Young',
+        album: 'Feel Something',
+        year: '2017'
+    });
+});
+
+app.post('/input', function(req, res) {
     if (!req.files){
         return res.status(400).send('No files were uploaded.');
     }
     if(req.files.mp3File){
         let mp3File = req.files.mp3File;
-        mp3File.mv(__dirname + '/input/new.mp3', function(err) {
-            if (err){
-                return res.status(500).send(err);
-            }
-        });
+        var mp3path = __dirname + '/CNN/Input/Raw/new.mp3'
+        const moveMP3 = async () => {
+            await mp3File.mv(mp3path, function(err) {
+                if (err){
+                    return res.status(500).send(err);
+                }
+            });
+            await mm.parseFile(mp3path, {native: true})
+                .then(function (metadata) {
+                    //console.log(util.inspect(metadata, { showHidden: false, depth: null }));
+                    console.log('made it here!');
+                    console.log(metadata.common.title);
+                    console.log(metadata.common.artist);
+                    console.log(metadata.common.album);
+                    console.log(metadata.common.year);
+                })
+                .catch(function (err) {
+                    console.error(err.message);
+            });
+        };
+        moveMP3();
+
+        //getMM(__dirname + '/CNN/Input/Raw/new.mp3');
+        // res.render('index', {
+        //     title: mp3MM.title,
+        //     artist: mp3MM.artist,
+        //     album: mp3MM.album,
+        //     year: mp3MM.year
+        // });
     };
     if(req.body.soundCloudURL){
         let soundCloudURL = req.body.soundCloudURL;
@@ -34,30 +84,43 @@ app.post('/input', async function(req, res) {
         mp3FromYouTube(youTubeURL);
         console.log(youTubeURL);
     };
-    var newBPM = getBPM(__dirname + '/input/new.mp3')
+    var newBPM = getBPM(__dirname + '/CNN/Input/Raw/new.mp3')
     res.send('BPM is ' + newBPM);
 });
+//app.get('/cnnResults', callCNN);
 
 app.listen(8000, function () {
-    console.log('server running on port 8000');
+    console.log('Server running on port 8000...');
 })
 
 // modularize this
 
-// spectrogram
-var currentSpectrogram = new Image();
+// callCNN
+const PythonShell = require('python-shell');
 
-currentSpectrogram.onload = function(){
-  var height = img.height;
-  var width = img.width;
+callCNN = function(req, res) {
+  var options = {
+    args: ['sliceInput', 'predict'],
+    scriptPath: './CNN'
+  }
 
-  // code here to use the dimensions
-}
-currentSpectrogram.src = './public/Brazilian Zouk_1.png';
+  PythonShell.run('./main.py', 'predict', function (err, data) {
+    if (err) res.send(err);
+    res.send(data.toString())
+    console.log('Dance style scores: ' + data.toString())
+  });
+};
 
-// getBPM.js
+// getBPM
 const bpmSink = require('bpm.js')
 const spawn = require('child_process').spawn
+
+const createAudioStream = function(filename) {
+    var args = "-t raw -r 44100 -e float -c 1 -".split(" ")
+    args.unshift(filename)
+    var sox = spawn("sox", args)
+    return sox.stdout;
+};
 
 const getBPM = function(mp3){
     createAudioStream(mp3)
@@ -68,13 +131,18 @@ const getBPM = function(mp3){
     });
 };
 
-// convert mp3 to proper format
-const createAudioStream = function(filename) {
-    var args = "-t raw -r 44100 -e float -c 1 -".split(" ")
-    args.unshift(filename)
-    var sox = spawn("sox", args)
-    return sox.stdout;
-};
+// mp3FromSpotify
+// const downloader = require('spotify-mp3-playlist-downloader');
+// const mp3FromSpotify = function(spotifyURI){
+//     downloader.downloadPlaylist(spotifyURI, "./CNN/Input/Raw", function (err){
+//         if (err){
+//           console.log("download failed");
+//         }else{
+//           console.log("playlist download succeeded");
+//         }
+//     })
+// };
+
 
 // mp3FromSoundCloud
 const SoundRain = require('soundrain');
@@ -97,4 +165,37 @@ const mp3FromYouTube = function(youTubeURL){
         console.log('Download completed!');
     });
 };
+
+// tapBPM
+const BPM = require('bpm');
+
+const tapBPM = function(){
+
+    b = new BPM();
+    b.tap();
+    setTimeout(function() {
+      console.log(b.tap());
+    }, 1000);
+
+    // update gauge
+};
+
+// getMeta
+const mm = require('music-metadata');
+const util = require('util')
+
+const getMM = function(mp3path){
+    mm.parseFile(mp3path, {native: true})
+    .then(function (metadata) {
+        // return util.inspect(metadata, { showHidden: false, depth: null })
+        console.log(util.inspect(metadata, { showHidden: false, depth: null }));
+    })
+    .catch(function (err) {
+        console.error(err.message);
+    });
+};
+
+// chart updates!
+// Ask about managing post and get from different input sources. And how to avoid redirecting to a new URL
+// async await, .then or what to manage app.post processes.
 
