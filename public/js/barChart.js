@@ -10,7 +10,7 @@ var myChart = new Chart(ctx, {
         labels: [" ", " ", " ", " "],
         datasets: [{
             label: 'Score',
-            data: [12, 19, 3, 5],
+            data: cnnArray,
             backgroundColor: 'white'
         }]
     },

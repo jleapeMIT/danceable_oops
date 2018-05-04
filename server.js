@@ -10,13 +10,11 @@ const fs = require('fs-extra');
 const chart = require('chart.js');
 const PythonShell = require('python-shell');
 const spawn = require('child_process').spawn
-const downloader = require('spotify-mp3-playlist-downloader');
-const SoundRain = require('soundrain');
 const getYouTube = require('youtube-mp3');
 const BPM = require('bpm');
 const bpmSink = require('bpm.js');
 const mm = require('music-metadata');
-
+const callCNN = require('./nodeTest/callCNN.js')
 
 const app = express();
 
@@ -39,37 +37,66 @@ app.use(fileUpload());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.static(__dirname, { index: 'index.htm' }));
 
+const jobs = {};
 app.get('/', function(req, res){
     res.render('index', {
         title: "We Won't",
         artist: 'James Young',
         album: 'Feel Something',
-        year: '2017'
+        year: '2017',
+        predictionArray: 'let cnnArray = [2,53,15,30];',
+        machineBPM: 'let machineBPM = 83;'
     });
 });
+// app.get('/jobs/:id', function(req, res) {
+//     if (jobs[req.body.id]) {
+//         // send in resp whatever you need
+//         res.body = { done: true, /* toher stuff */}
+//     } else {
+//         res.boy = { done: false };
+//     }
+// })
 
-app.post('/input', function(req, res) {
-    if (!req.files){
+const mp3dir = __dirname + '/CNN/Input/Raw/'
+const mp3path = mp3dir + 'new.mp3'
+
+app.post('/input', async function(req, res) {
+    if (!req.files && !req.body.soundCloudURL && !req.body.youTubeURL){
         return res.status(400).send('No files were uploaded.');
     }
-    if(req.files.mp3File){
-        let mp3File = req.files.mp3File;
-        var mp3path = __dirname + '/CNN/Input/Raw/new.mp3'
-        fs.writeFileSync(mp3path, mp3File);
-        var metadata = parseMP3File(mp3path);
-    };
     if(req.body.soundCloudURL){
         let soundCloudURL = req.body.soundCloudURL;
-        mp3FromSoundCloud(soundCloudURL);
-        console.log(soundCloudURL);
+        await mp3FromSoundCloud(soundCloudURL, mp3dir);
     };
     if(req.body.youTubeURL){
         let youTubeURL = req.body.youTubeURL;
-        mp3FromYouTube(youTubeURL);
-        console.log(youTubeURL);
+        await mp3FromYouTube(youTubeURL, mp3dir);
     };
-    var newBPM = getBPM(__dirname + '/CNN/Input/Raw/new.mp3')
-    res.send('BPM is ' + newBPM);
+    if(req.files.mp3File){
+        let mp3File = req.files.mp3File;
+        await mp3File.mv(mp3path);
+    };
+    const metadata = await mm.parseFile(mp3path);
+    console.log('title: ' + metadata.common.title);
+    console.log('artist: ' + metadata.common.artist);
+    console.log('album: ' + metadata.common.album);
+    console.log('year: ' + metadata.common.year);
+    let machineBPM = 0;
+    getBPM(mp3path);
+    let prediction = await callCNN();
+    let predictionArray = [prediction.Afrobeat, prediction['Brazilian Zouk'], prediction.Bachata, prediction.Kizomba];
+    let predictionStr = 'let cnnArray = [' + predictionArray + '];';
+    console.log(predictionStr)
+    let machineBPMstr = 'let machineBPM = ' + machineBPM + ';';
+    console.log(machineBPM)
+    res.render('index', { 
+        title: metadata.common.title,
+        artist: metadata.common.artist,
+        album: metadata.common.album,
+        year: metadata.common.year,
+        predictionArray: predictionStr,
+        machineBPM: machineBPMstr
+    });
 });
 //app.get('/cnnResults', callCNN);
 
@@ -78,20 +105,6 @@ app.listen(8000, function () {
 })
 
 // modularize this
-
-// callCNN
-callCNN = function(req, res) {
-  var options = {
-    args: ['sliceInput', 'predict'],
-    scriptPath: './CNN'
-  }
-
-  PythonShell.run('./main.py', 'predict', function (err, data) {
-    if (err) res.send(err);
-    res.send(data.toString())
-    console.log('Dance style scores: ' + data.toString())
-  });
-};
 
 // getBPM
 const createAudioStream = function(filename) {
@@ -106,71 +119,28 @@ const getBPM = function(mp3){
     .pipe(bpmSink())
     .on("bpm", function(bpm){
       console.log("bpm is %d", bpm)
-      return bpm;
-    });
-};
-
-// mp3FromSpotify
-// const mp3FromSpotify = function(spotifyURI){
-//     downloader.downloadPlaylist(spotifyURI, "./CNN/Input/Raw", function (err){
-//         if (err){
-//           console.log("download failed");
-//         }else{
-//           console.log("playlist download succeeded");
-//         }
-//     })
-// };
-
-
-// mp3FromSoundCloud
-const mp3FromSoundCloud = function(soundCloudURL){
-    var Song = new SoundRain(soundCloudURL, './input');
-    Song.on('error', function(err) {
-        if(err) throw err;
-    }).on('done', function(file) {
-        console.log(file);
+      machineBPM = Math.round(bpm);
     });
 };
 
 // mp3FromYouTube
-const mp3FromYouTube = function(youTubeURL){
-    getYouTube.download(youTubeURL, '/input', function(err) {
+const mp3FromYouTube = async function(youTubeURL, path){
+    getYouTube.download(youTubeURL, path, function(err) {
         if(err) return console.log(err);
         console.log('Download completed!');
     });
 };
 
-// tapBPM
-const tapBPM = function(){
-    b = new BPM();
-    b.tap();
-    setTimeout(function() {
-      console.log(b.tap());
-    }, 1000);
-
-    // update gauge
-};
-
 // getMeta
-async function parseMP3File(path) {
+const parseMP3File = async function(path) {
     return new Promise((resolve, reject) => {
-        mm(fs.createReadStream(path), function (err, metadata) {
+        console.log(path);
+        mm.parseFile(fs.createReadStream(path), function (err, metadata) {
             if (err) reject(err);
             resolve(metadata);      
         });                 
     });
 }
-
-// const getMM = function(mp3path){
-//     mm.parseFile(mp3path, {native: true})
-//     .then(function (metadata) {
-//         // return util.inspect(metadata, { showHidden: false, depth: null })
-//         console.log(util.inspect(metadata, { showHidden: false, depth: null }));
-//     })
-//     .catch(function (err) {
-//         console.error(err.message);
-//     });
-// };
 
 // chart updates!
 // Ask about managing post and get from different input sources. And how to avoid redirecting to a new URL

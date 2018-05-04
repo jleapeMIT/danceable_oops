@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "test": "npm test",
-    "start": "node server.js"
+    "start": "node server.js",
+    "bundle": "browserify -d public/js/index.js > public/js/bundle.js"
   },
   "repository": {
     "type": "git",
@@ -42,8 +43,7 @@
     "express-fileupload": "^0.4.0",
     "fs-extra": "^6.0.0",
     "music-metadata": "^0.11.3",
-    "python-shell": "^0.5.0",
-    "soundrain": "0.0.2",
+    "mz": "^2.7.0",
     "util": "^0.10.3",
     "youtube-mp3": "^0.1.2"
   }

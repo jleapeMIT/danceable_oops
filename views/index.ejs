@@ -7,7 +7,7 @@
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-    <link rel="stylesheet" href="css/custom.css" />
+    <link rel="stylesheet" type="text/css" href="css/custom.css" />
 
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css?family=Fascinate|Montserrat:100" rel="stylesheet">
@@ -17,9 +17,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js"></script>
 
     <!-- Linear Guage Extension -->
-    <script src="src/chart.scale.lineargauge.js"></script>
+    <!-- <script src="src/chart.scale.lineargauge.js"></script>
     <script src="src/chart.element.gaugerect.js"></script>
-    <script src="src/chart.lineargauge.js"></script>
+    <script src="src/chart.lineargauge.js"></script> -->
 
     <!-- Circular Gauge Extension -->
     <script type="text/javascript" src="https://ajax.aspnetcdn.com/ajax/globalize/0.1.1/globalize.min.js"></script>
@@ -45,11 +45,11 @@
               </select>
             </div>
           <!-- Spotify -->
-          <div>
+          <!-- <div>
               <label style="font-family: 'Montserrat', sans-serif; color: white;" for="spotifyURL">Spotify Link: </label>
               <input type="text" name="spotifyURL" />
             </div>
-          <iframe width="100%" height="300" scrolling="no" frameborder="no" allowtransparency="true" allow="encrypted-media" src="https://open.spotify.com/embed?uri=spotify:user:spotify:playlist:37i9dQZF1DWT34oeYRnJ0R&theme=white"></iframe>
+          <iframe width="100%" height="300" scrolling="no" frameborder="no" allowtransparency="true" allow="encrypted-media" src="https://open.spotify.com/embed?uri=spotify:user:spotify:playlist:37i9dQZF1DWT34oeYRnJ0R&theme=white"></iframe> -->
 
           <!-- SoundCloud -->
           <div>
@@ -75,6 +75,10 @@
                 <input type="file" name="mp3File" accept=".mp3"/>
                 UPLOAD MP3
             </label>
+            <!-- <label style="font-family: 'Montserrat', sans-serif; color: white;" for="soundCloudURL">SoundCloud Link: </label>
+            <input type="text" name="soundCloudURL" />
+            <label style="font-family: 'Montserrat', sans-serif; color: white;" for="youTubeURL">YouTube Link: </label>
+            <input type="text" name="youTubeURL" /> -->
             <div>
                 <button>Submit</button>
               </div>
@@ -83,23 +87,37 @@
         </div>
 
         <div class="col-lg-9 col-md-9 col-sm-12 col-xs-12">
+          <!-- Spectrogram -->
           <div class="slidingSpectro">
             <img src="./CNN/Input/InputSpectrograms/inputSpectro.png" class="spectro" alt="Responsive Image">
           </div>
+          <!-- Audio Play Button -->
+          <div class="audioplay-object">
+            <div class="audioplay-button"></div>
+            <audio class="audioplay-player" data-apskin="classic">
+              <!-- AudioPlay2 player. Visit https://strangecube.com/audioplay2/ -->
+              <!-- <source src="https://strangecube.com/audioplay2/player/music/music.ogg" /> -->
+	            <!-- <source src="https://strangecube.com/audioplay2/player/music/music.mp3" /> -->
+              <source src="./CNN/Input/Raw/new.mp3" />
+              Your browser doesn't support &lt;audio&gt; element.
+            </audio>
+          </div>
           <!-- BPM Gauges-->
           <div class="row">
-              <div id="circularGaugeContainer" style="height:400px;margin:0 auto"></div>
-                <!-- <div style="width: 100%; float: left; padding: 20px;">
-                    <div style="float: left; padding: 0px;">
-                        <canvas id="canvas10" height="408" width="981" style="width: 981px; height: 408px;"></canvas>
-                    </div>
-                </div> -->
-              <button type="button" class="btn btn-default btn-circle btn-xl"><i>TAP</i></button>
-              <div id="circularGaugeContainer_user" style="height:400px;margin:0 auto"></div>
+            <script><%= machineBPM %></script>
+            <div id="circularGaugeContainer" style="height:400px;margin:0 auto"></div>
+              <!-- <div style="width: 100%; float: left; padding: 20px;">
+                  <div style="float: left; padding: 0px;">
+                      <canvas id="canvas10" height="408" width="981" style="width: 981px; height: 408px;"></canvas>
+                  </div>
+              </div> -->
+            <button type="button" id="bpmButton" class="btn btn-default btn-circle btn-xl"><i>TAP</i></button>
+            <div id="circularGaugeContainer_user" style="height:400px;margin:0 auto"></div>
           </div>
-          <!-- Feedback Form -->
+          <!-- Server Results -->
           <div class="row">
             <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
+                <script><%= predictionArray %></script>
                 <canvas id="myChart" width="400" height="400"></canvas>
                 <br>
                 <h2><%= title %></h2>
@@ -111,6 +129,7 @@
                 <h2><%= year %></h2>
                 <br>
             </div>
+            <!-- Feedback Form -->
             <div class="col-lg-8 col-md-8 col-sm-8 col-xs-8">
               <form action="js/setMetaData.js">
                 <!-- Dance Style Checkboxes -->
@@ -157,7 +176,7 @@
                       <input type="submit" name="Submit" />
                       SUBMIT FEEDBACK
                   </label>
-                  <a href="/input/new.mp3" download/>DOWNLOAD MP3</a>
+                  <a href="CNN/Input/Raw/new.mp3" download/>DOWNLOAD MP3</a>
                 </form>
             </div>
         </div>
@@ -165,13 +184,17 @@
     </div>
     
     <!-- Charts -->
-    <script src="js/barChart.js"></script>
+    <!-- <script src="js/barChart.js"></script> -->
     <!-- <script src="js/bpmGauge_linear.js"></script> -->
-    <script src="js/bpmGauge_circular.js"></script>
+    <!-- <script src="js/bpmGauge_circular.js"></script> -->
+    <!-- <script src="js/main.js"></script> -->
+    <script src="js/bundle.js"></script>
 
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <!-- Audio Play Button -->
+    <script src="https://strangecube.com/audioplay2/player/js/audioplay-2.0.0.min.js"></script>
+
+    <!-- Bootstrap -->
+    <!-- <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script> -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
   
